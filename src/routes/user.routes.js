@@ -11,3 +11,5 @@ router.route('/register').post(registerUser)
     //new route is defined as
     //router.route('/login).post(loginUser) where login user is a controller
     //https://localhost:8000/user/login
+
+export default router;

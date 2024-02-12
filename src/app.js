@@ -9,6 +9,7 @@ app.use(cors({
         Credentials: true
     })) // (initiLise middleware cors using app.use)
 app.use(cookieParser())
+app.use(express.json())
 
 
 // routes import
