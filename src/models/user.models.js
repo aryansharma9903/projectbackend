@@ -52,7 +52,7 @@ const userSchema = new mongoose.schema({
 userSchema.pre("save", async function(next) {
         if (!this.isModified("password"))
             return next()
-        this.password = bcrypt.hash(this.password, 10)
+        this.password = await bcrypt.hash(this.password, 10)
         next()
     })
     // (IMP!!!) bcrypt can also cpmpare the password input by the user(password) and the password saved in the 

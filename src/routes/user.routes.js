@@ -1,9 +1,21 @@
 import { Router } from "express";
 import { registerUser } from "../controllers/user.controller.js";
+import { upload } from "../middlewares/multer.middleware.js" //importing a middleware for file handling
 
 const router = Router();
 
-router.route('/register').post(registerUser)
+router.route('/register').post( //using the multer middleware now we can send images or files to cloudinary
+        upload.fields([{
+                name: "avatar",
+                maxCount: 1
+            },
+            {
+                name: "coverImage",
+                maxCount: 1
+            }
+        ]),
+        registerUser
+    )
     // IMP COMMENTS!!!!!
     //https://localhost:8000/user/register
     //here we can make many different controllers and we can import all of them here as post methods
@@ -13,3 +25,28 @@ router.route('/register').post(registerUser)
     //https://localhost:8000/user/login
 
 export default router;
+
+
+
+
+
+//routes
+//import controller
+//imoort {Router} from express
+//import {upload} from "../middleware/multer.middleware.js"
+
+// const router = Router();
+
+//router.route('/register').post(
+//    upload.fields([
+//         {
+//             name: 'avatar',
+//             maxCount: 1,
+//  //       },
+//         {
+//                 name: "coverImage",
+//                 maxCount: 1,
+// //         }
+//])
+//   registerUser
+//   )
