@@ -27,7 +27,7 @@ const registerUser = asyncHandler(async(req, res) => {
     //for this we need to match the user data from the whole database using the user object created
     //in mongooes, open user models in mongoose
     //import that user
-    const existedUser = User.findone({
+    const existedUser = await User.findOne({
         $or: [{ username }, { email }]
     })
     if (existedUser) {
@@ -64,7 +64,7 @@ const registerUser = asyncHandler(async(req, res) => {
         })
 
         //check for user creation is successful? (response)
-                //(while creating user entries in db, user_id is developed unique for user
+                //while creating user entries in db, user_id is developed unique for user
         //remove password and refresh token from response        
             const createdUser = await User.findById(user._id).select(
                 "-password -refreshToken"
