@@ -4,6 +4,17 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { User } from "../models/user.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 
+const generateAccessAndRefreshToken = async (userId) => {
+    try {
+        const inputUser = await User.findById(userId)
+        const accessToken = inputUser.generateAccessToken()
+        const refreshToken = inputUser.generateRefreshToken()
+    } catch (error) {
+        throw new apiError(500, "something went wrong while generating access and refrsh token")
+    }
+}
+
+//register user
 const registerUser = asyncHandler(async(req, res) => {
     //get user details from front-end
     const { username, fullName, email, password } = req.body
@@ -38,7 +49,13 @@ const registerUser = asyncHandler(async(req, res) => {
     //multer provides us with req.files to get only files
 
     const avatarLocalPath = req.files?.avatar[0]?.path; //get all the files(avatar) given by user
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    //const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+    //Array.isArray is a method to check whether a variable is an array or not (with arg as an array)
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage)&& req.files.coverImage.length>0) {
+        req.files.coverImage[0].path
+    }
 
     if (!avatarLocalPath) {
         throw new apiError(400, "avatar file is required");
@@ -80,4 +97,36 @@ const registerUser = asyncHandler(async(req, res) => {
 
 })
 
+//login user
+const loginUser = asyncHandler(async (req,res) => {
+//1) taking username and password from user (req.body)
+
+const { username, password, email } = req.body;
+if (!username || !email) {
+    throw new apiError(404, "username or email is required");
+}
+//2) check if username or email matches with one's registered on database, if not then throw error
+// user not registered, pls register
+
+   const inputUser = await User.findOne({
+        $or: [{email}, {username}]
+    })
+    if (!inputUser) {
+        throw new apiError(400, "user does not exist, please register")
+    }
+
+    //2.1)if present then match password
+    const isPasswordValid = await inputUser.isPasswordCorrect(password)
+
+        //2.11) wrong password, then show wrong password
+            if (!isPasswordValid) {
+                throw new apiError(401, "password invalid");
+            }
+        //2.12) if correct give access and refresh token
+            //making a generalised function at the top
+    //2.2) else message pls register
+//3) send cookie
+})
+
 export { registerUser }
+export { loginUser }
