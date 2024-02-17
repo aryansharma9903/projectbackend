@@ -15,8 +15,7 @@ const registerUser = asyncHandler(async(req, res) => {
     // }
     //or
     if (
-        [fullName, email, username, password].some((field) =>
-            field?.trim() === "")
+        [fullName, email, username, password].some((field) => field?.trim() === "")
     ) {
         throw new apiError(400, "all fields required")
     }
@@ -37,6 +36,7 @@ const registerUser = asyncHandler(async(req, res) => {
     //check for images, check for avatar(required)
     //req.body to get all the data
     //multer provides us with req.files to get only files
+
     const avatarLocalPath = req.files?.avatar[0]?.path; //get all the files(avatar) given by user
     const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
