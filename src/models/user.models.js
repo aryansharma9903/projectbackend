@@ -48,7 +48,6 @@ const userSchema = new mongoose.Schema({
 
 //(IMP!!!!) bcrypt using mongoose(pre hooks) as middleware which encrypt the password just before saving the
 //data of the user.
-
 userSchema.pre("save", async function(next) {
         if (!this.isModified("password"))
             return next()
@@ -60,6 +59,7 @@ userSchema.pre("save", async function(next) {
 userSchema.methods.isPasswordCorrect = async function(password) {
     return await bcrypt.compare(password, this.password)
 }
+
 userSchema.methods.generateAccessToken = function() {
     return jwt.sign({
             _id: this._id,
