@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { registerUser } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, registerUser } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 //importing a middleware for file handling
 
 const router = Router()
@@ -18,6 +19,11 @@ router.route("/register").post( //using the multer middleware now we can send im
         ]),
         registerUser
     )
+
+router.route("/login").post(loginUser)
+
+//secured routes
+router.route("/logout").post(verifyJWT, logoutUser) //injecting middleware just before passing control to the controllers
     // IMP COMMENTS!!!!!
     //https://localhost:8000/users/register
     //here we can make many different controllers and we can import all of them here as post methods

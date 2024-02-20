@@ -133,6 +133,7 @@ if (!username || !email) {
         const{accessToken, refreshToken} = await generateAccessAndRefreshToken(inputUser._id)
             //making a generalised function at the top
     //2.2) else message pls register
+    //sending response to the user except the password and refresh token
         const loggedInUser = await inputUser.findById(inputUser._id).select("-password -refreshToken")
 //3) send cookie
 
@@ -155,10 +156,40 @@ return res
 )
 })
 //logout user
+//we can't get username email once again to check which user is logging out
+//so we need to check the tokens currently used by which user
+//to access these we will write a middleware
+//then finally, (next line)
+//to logout user we need to remove cookies, access token and refresh token
+
 
 const logoutUser = asyncHandler( async (req,res)=> {
-
+    //we got the user details from the middleware auth, now we have the user info
+    //we can clear the cookies and tokens
+    await User.findByIdAndUpdate(
+        //finds the user by id and then updates the fields as per the need
+        req.user._id,
+        {
+            $set: {
+                refreshToken: undefined
+            }
+        }
+    )
+    const options = {
+        httpOnly: true,
+        secure: true,
+    }
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new apiResponse(
+        200, {}, "User logged out successfully"
+    ))
 })
 
-export { registerUser }
-export { loginUser }
+export {
+    registerUser,
+    loginUser,
+    logoutUser
+}
