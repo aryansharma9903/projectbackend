@@ -1,8 +1,7 @@
-import { User } from "../models/user.models";
-import { apiError } from "../utils/apierrors";
-import { asyncHandler } from "../utils/asyncHandler";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.models.js";
+import { apiError } from "../utils/apierrors.js";
 //import jsonwebtoken from "jsonwebtoken";
 // designing this middleware for logging out user
 
@@ -10,7 +9,7 @@ export const verifyJWT = asyncHandler(async(req, res, next) => {
     try {
         //getting token from either cookies or from header
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
-        //req has access to cookies by cookieparser()
+            //req has access to cookies by cookieparser()
         if (!token) {
             throw new apiError(401, "unauthorised request")
         }

@@ -3,7 +3,7 @@ import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { User } from "../models/user.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
-import { response } from "express";
+import jwt  from "jsonwebtoken";
 //check this code for login user
 const generateAccessAndRefreshToken = async (userId) => {
     try {
@@ -109,8 +109,8 @@ const loginUser = asyncHandler(async (req,res) => {
 //1) taking username and password from user (req.body)
 
 const { username, password, email } = req.body;
-if (!username || !email) {
-    throw new apiError(404, "username or email is required");
+if (!(username || email)) {
+    throw new apiError(404, "username or email is required");  
 }
 //2) check if username or email matches with one's registered on database, if not then throw error
 // user not registered, pls register
@@ -121,7 +121,9 @@ if (!username || !email) {
     if (!inputUser) {
         throw new apiError(400, "user does not exist, please register")
     }
-
+    if(!password){
+        throw new apiError(400, "password is required");
+    }
     //2.1)if present then match password
     const isPasswordValid = await inputUser.isPasswordCorrect(password)
 
@@ -134,7 +136,7 @@ if (!username || !email) {
             //making a generalised function at the top
     //2.2) else message pls register
     //sending response to the user except the password and refresh token
-        const loggedInUser = await inputUser.findById(inputUser._id).select("-password -refreshToken")
+        const loggedInUser = await User.findById(inputUser._id).select("-password -refreshToken")
 //3) send cookie
 
 const options = {
@@ -187,9 +189,63 @@ const logoutUser = asyncHandler( async (req,res)=> {
         200, {}, "User logged out successfully"
     ))
 })
+// refresh token is saved in the database, to provide the user with thr token when the access token time expires
+// so that user does not have to login again. and refresh the token
+// so when the token expires user gets a 401 error
+// so we need to create that endpoint which user hits when this error occurs,
+
+const refreshAccessToken = asyncHandler (async (req,res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body //user's refresh token
+    //we have another refresh token stored in database
+    if(!incomingRefreshToken){
+        throw new apiError(400, "unauthorised request")
+    }
+    const decodedToken = jwt.verify(
+        incomingRefreshToken, 
+        process.env.REFRESH_TOKEN_SECRET
+        )
+    // now that we have the decoded refresh token, we have the user id
+    // while creating refreshtoken(check user models), we passed user_id
+    // and using mongodb queries we can get the user information
+    // we will find the decoded token id in the user database by find by id
+    const user = await User.findById(decodedToken?._id)
+    // using this we found a user
+    if (!user) {
+        throw new apiError(400, "invalid refresh token")
+    }
+    // now we'll whether thw two users are same or not
+    // so now we have two tokens, one saved in databse and one we got from cookies(as incoming refresh token)
+    if(incomingRefreshToken !== user?.refreshToken){
+        throw new apiError(400, "invalid refresh token")
+    }
+
+    //sending new refresh tokens using cookies
+    const {accessToken, newRefreshToken} = await generateAccessAndRefreshToken(user._id)
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", newRefreshToken, options)
+    .json(
+        new apiResponse(
+            200, 
+            {accessToken, refreshToken: newRefreshToken},
+            "access token refreshed"
+            )
+        )
+
+
+}
+)
+
 
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessToken
 }
