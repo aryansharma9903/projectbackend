@@ -195,50 +195,52 @@ const logoutUser = asyncHandler( async (req,res)=> {
 // so we need to create that endpoint which user hits when this error occurs,
 
 const refreshAccessToken = asyncHandler (async (req,res) => {
-    const incomingRefreshToken = req.cookies.refreshToken || req.body //user's refresh token
-    //we have another refresh token stored in database
-    if(!incomingRefreshToken){
-        throw new apiError(400, "unauthorised request")
-    }
-    const decodedToken = jwt.verify(
-        incomingRefreshToken, 
-        process.env.REFRESH_TOKEN_SECRET
-        )
-    // now that we have the decoded refresh token, we have the user id
-    // while creating refreshtoken(check user models), we passed user_id
-    // and using mongodb queries we can get the user information
-    // we will find the decoded token id in the user database by find by id
-    const user = await User.findById(decodedToken?._id)
-    // using this we found a user
-    if (!user) {
-        throw new apiError(400, "invalid refresh token")
-    }
-    // now we'll whether thw two users are same or not
-    // so now we have two tokens, one saved in databse and one we got from cookies(as incoming refresh token)
-    if(incomingRefreshToken !== user?.refreshToken){
-        throw new apiError(400, "invalid refresh token")
-    }
-
-    //sending new refresh tokens using cookies
-    const {accessToken, newRefreshToken} = await generateAccessAndRefreshToken(user._id)
-
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
-    return res
-    .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", newRefreshToken, options)
-    .json(
-        new apiResponse(
-            200, 
-            {accessToken, refreshToken: newRefreshToken},
-            "access token refreshed"
+    try {
+        const incomingRefreshToken = req.cookies.refreshToken || req.body //user's refresh token
+        //we have another refresh token stored in database
+        if(!incomingRefreshToken){
+            throw new apiError(400, "unauthorised request")
+        }
+        const decodedToken = jwt.verify(
+            incomingRefreshToken, 
+            process.env.REFRESH_TOKEN_SECRET
             )
-        )
-
-
+        // now that we have the decoded refresh token, we have the user id
+        // while creating refreshtoken(check user models), we passed user_id
+        // and using mongodb queries we can get the user information
+        // we will find the decoded token id in the user database by find by id
+        const user = await User.findById(decodedToken?._id)
+        // using this we found a user
+        if (!user) {
+            throw new apiError(400, "invalid refresh token")
+        }
+        // now we'll whether thw two users are same or not
+        // so now we have two tokens, one saved in databse and one we got from cookies(as incoming refresh token)
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new apiError(400, "invalid refresh token")
+        }
+    
+        //sending new refresh tokens using cookies
+        const {accessToken, newRefreshToken} = await generateAccessAndRefreshToken(user._id)
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+        return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", newRefreshToken, options)
+        .json(
+            new apiResponse(
+                200, 
+                {accessToken, refreshToken: newRefreshToken},
+                "access token refreshed"
+                )
+            )
+    } catch (error) {
+        throw new apiError(401, "invalid refresh token")
+    }
 }
 )
 

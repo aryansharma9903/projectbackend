@@ -1,24 +1,24 @@
 import { Router } from "express";
-import { loginUser, logoutUser, registerUser } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, registerUser, refreshAccessToken } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 //importing a middleware for file handling
 
+
 const router = Router()
 
 router.route("/register").post( //using the multer middleware now we can send images or files to cloudinary
-        upload.fields([
-            {
-                name: "avatar",
-                maxCount: 1
-            },
-            {
-                name: "coverImage",
-                maxCount: 1
-            }
-        ]),
-        registerUser
-    )
+    upload.fields([{
+            name: "avatar",
+            maxCount: 1
+        },
+        {
+            name: "coverImage",
+            maxCount: 1
+        }
+    ]),
+    registerUser
+)
 
 router.route("/login").post(loginUser)
 
@@ -31,7 +31,7 @@ router.route("/logout").post(verifyJWT, logoutUser) //injecting middleware just 
     //new route is defined as
     //router.route('/login).post(loginUser) where login user is a controller
     //https://localhost:8000/users/login
-
+router.route("/refresh-token").post(refreshAccessToken)
 export default router;
 
 
