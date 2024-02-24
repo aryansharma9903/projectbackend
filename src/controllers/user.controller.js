@@ -244,10 +244,60 @@ const refreshAccessToken = asyncHandler (async (req,res) => {
 }
 )
 
+const changeCurrentPassword = asyncHandler(async (req,res) => {
+    const {oldPassword, newPassword} = req.body
+    //if user is changing password then user must be logged in
+    //and we have creadted an auth middleware where req.user = user,
+    //so we can get the user id easily
+    const user = await User.findById(req.user?._id)
+    const correctornot = await user.isPasswordCorrect(oldPassword)
+    if (!correctornot) {
+        throw new apiError(400, "invalid old password")
+    }
+    user.password = newPassword;
+    //using our pre hooks this password will be hashed before saving
+    //to save
+    await user.save({validateBeforeSave: false})
+    return res
+    .status(200)
+    .json(new apiResponse(200,{},"Password changed successfully"))
+})
+
+const getCurrentUser = asyncHandler( async (req,res)=>{
+    return req
+    .status(200)
+    .json(200, req.user, "current user fetch successfully")
+})
+
+const updateAccountDetails = asyncHandler( async(req,res)=> {
+    const {fullName, email} = req.body;
+    if (!(fullName || email)) {
+        throw new apiError(400, "pls enter fullname and email")
+    }
+    //its better to update the files in another controller
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                email,
+                fullName
+            }
+        },
+        {new: true}
+    ).select("-password")
+    //sending repsonse to user so, negelcting passwor fiels
+    return res
+    .status(200)
+    .json(new apiResponse(200, user, "account details updated successfully"))
+})
+
 
 export {
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails,
 }
